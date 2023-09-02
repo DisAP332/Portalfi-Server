@@ -11,8 +11,8 @@ const eventsRouter = require('./Profile/DataInteractions/Events/EventsRouter')
 const https = require('https')
 const http = require('http')
 
-const httpPort = 80
-const httpsPort = 443
+const httpPort = 8080
+const httpsPort = 8443
 
 // app use middleware //
 
@@ -25,15 +25,26 @@ app.use(cookieParser())
 
 const DBMethods = require('./db');
 
-// ---- app ------ //
+// JWT //
+
+app.use('/user', userRouter)
+
+app.use('/events', eventsRouter)
+
+app.use('/test', (req, res, next) => {
+    res.send('hello from server')
+})
 
 const httpServer = http.createServer(app)
 const httpsServer = https.createServer(app)
 
-httpServer.listen(httpPort, () => {
-    console.log()
+app.listen(httpPort, () => {
+    console.log(`HTTP server running on port ${httpPort}`)
+})
+app.listen(httpsPort, () => {
+    console.log(`HTTPS server running on port ${httpsPort}`)
 })
 
-httpsServer.listen(httpsPort, () => {
-    console.log(`Http server is running on port ${httpsPort}`)
-});
+app.listen('3000', () => {
+    console.log('server running on port 3000')
+})
