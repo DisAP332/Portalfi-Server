@@ -8,6 +8,12 @@ require("dotenv").config();
 const userRouter = require('./User/userRouter')
 const eventsRouter = require('./Profile/DataInteractions/Events/EventsRouter')
 
+const https = require('https')
+const http = require('http')
+
+const httpPort = 80
+const httpsPort = 443
+
 // app use middleware //
 
 app.use(cors())
@@ -19,12 +25,15 @@ app.use(cookieParser())
 
 const DBMethods = require('./db');
 
-// JWT //
+// ---- app ------ //
 
-app.use('/user', userRouter)
+const httpServer = http.createServer(app)
+const httpsServer = https.createServer(app)
 
-app.use('/events', eventsRouter)
-
-app.listen('3000', () => {
-    console.log('server running on port 3000')
+httpServer.listen(httpPort, () => {
+    console.log()
 })
+
+httpsServer.listen(httpsPort, () => {
+    console.log(`Http server is running on port ${httpsPort}`)
+});
