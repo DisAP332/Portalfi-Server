@@ -7,6 +7,7 @@ require("dotenv").config();
 
 const userRouter = require('./User/userRouter')
 const eventsRouter = require('./Profile/DataInteractions/Events/EventsRouter')
+const profileRouter = require('./Profile/SecureRouter')
 
 const https = require('https')
 const http = require('http')
@@ -27,9 +28,34 @@ const DBMethods = require('./db');
 
 // JWT //
 
+const jwt = require('jsonwebtoken')
+
+const verifyJWT = (req, res, next) => {
+    const token = req.headers.authorization
+
+    if (!token){
+        console.log('no token provided')
+        res.send('No token provided.')
+    } else {
+        jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
+            if (err) {
+                console.log('Token auth failed.')
+                res.json({auth: false, message: "failed auth, token doesnt match"})
+            } else {
+                console.log('Token auth succeeded')
+                next();
+            }
+        })
+    }
+}
+
+// Routes //
+
 app.use('/user', userRouter)
 
-app.use('/events', eventsRouter)
+app.use('/events', verifyJWT, eventsRouter)
+
+app.use('/profile', verifyJWT, profileRouter)
 
 app.use('/test', (req, res, next) => {
     res.send('hello from server')

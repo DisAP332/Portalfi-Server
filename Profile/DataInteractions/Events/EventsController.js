@@ -29,7 +29,7 @@ getEvents = async (req, res) => {
             }).then(() => {
                 return res.status(200).json({success: true, Data: eventsData})
             })
-        }, 1000);
+        }, 200);
     })
 }
 
@@ -50,8 +50,7 @@ createEvent = (req, res) => {
         }
     
         const event = new Event(Data)
-    
-        console.log(req.body.Data)
+
     
         if (!event) {
             return res.status(400).json({ success: false, error: err })
@@ -60,6 +59,7 @@ createEvent = (req, res) => {
         event.
             save()
             .then(() => {
+                console.log(`event created by ${req.body.User}`)
                 return res.status(201).json({
                     success: true,
                     id: event._id,
@@ -77,7 +77,7 @@ createEvent = (req, res) => {
 
 updateEvent = async (req, res) => {
     const body = req.body
-    console.log(req.body._id)
+    console.log('wtf')
     
     if(!body) {
         return res.status(400).json({
@@ -86,30 +86,39 @@ updateEvent = async (req, res) => {
         })
     }
 
-    try {
-        const eventFound = await Event.findOne({_id: body._id});
-        console.log(eventFound);
-        eventFound.Date = body.Date
-        eventFound.Name = body.Name
-        eventFound.Time = body.Time
-        eventFound.Description = body.Description
-        eventFound.Cost = body.Cost
-        eventFound
-            .save()
-            .then(() => {
-                return res.status(200).json({
-                    success: true,
-                    id: eventFound._id,
-                    message: 'Event updated!',
+    new Promise((resolve, reject) => {
+        DBMethods.DB(req.body.user)
+        setTimeout(() => {
+            console.log('connected should be atleast')
+            resolve()
+        }, 1000)
+    }).then(async () => {
+        console.log('now we doing thiisi')
+        try {
+            const eventFound = await Event.findOne({_id: body.event._id});
+            eventFound.Date = body.event.Date
+            eventFound.Name = body.event.Name
+            eventFound.Time = body.event.Time
+            eventFound.Description = body.event.Description
+            eventFound.Cost = body.event.Cost
+            eventFound
+                .save()
+                .then(() => {
+                    console.log(`event updated by ${req.body.user}`)
+                    return res.status(200).json({
+                        success: true,
+                        id: eventFound._id,
+                        message: 'Event updated!',
+                    })
                 })
+    
+        } catch (err) {
+            return res.status(404).json({
+                err,
+                message: 'Event not found!'
             })
-
-    } catch (err) {
-        return res.status(404).json({
-            err,
-            message: 'Event not found!'
-        })
-    }
+        }
+    })
 }
 
 deleteEvent = async (req, res) => {
