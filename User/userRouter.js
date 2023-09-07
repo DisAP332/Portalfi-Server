@@ -19,43 +19,24 @@ router.use(cookieParser())
 passport.use(
     "login",
     new localStrategy( async (username, password, done) => {
-        new Promise((resolve, rej) => {
-            DBMethods.DB('Users')
-            setTimeout(() => {
-                resolve()
-            }, 500)
-        }).then(async () => {
+        DBMethods.DB('Users')
+        .then(async () => {
             try {
-                // first we will get the users from the database
-                const users = async (req, res) => {
-                    try {
-                        const users = await User.find({})
-                        if(users) {
-                            return res.status(200).json({success: true, data: users})
-                        }
-                    } catch (err) {console.log(err)}
-                }
-                // if users exist check if username exists
-                if (users) {
-                    userExists = await User.findOne({username: username})
-                    // if user doesnt exist close out with done
-                    if (!userExists) {
-                        DBMethods.CloseDB()
-                        return done(null, false, {message: 'user not found'})
-                    }
+                userExists = await User.findOne({username: username})
+                if (!userExists) {
+                    return done(null, false, {message: 'user not found'})
                 }
     
-                //check the passwords
                 let passwordCheck = await bcrypt.compare(password, userExists.password)
-    
+        
                 if (!passwordCheck) return done(null, false, {message: 'invalid credentials'})
     
-                DBMethods.CloseDB()
-    
-                return done(null, userExists, {message: 'your logged in!'})
+                return done(null, userExists, {message: 'your logged in!'}) 
             } catch (error) {
-                return done(error)
+                console.log(error)
+                return done(null, false, {error: error})
             }
+
         })
     })
 )

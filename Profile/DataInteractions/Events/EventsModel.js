@@ -25,7 +25,7 @@ const EventSchema = new Schema({
         ref: "eventDescription"
     },
     Cost: {
-        type: Number,
+        type: String,
         required: true,
         ref: "eventCost"
     },

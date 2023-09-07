@@ -40,7 +40,7 @@ const verifyJWT = (req, res, next) => {
         jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
             if (err) {
                 console.log('Token auth failed.')
-                res.json({auth: false, message: "failed auth, token doesnt match"})
+                return res.json({auth: false, message: "failed auth, token doesnt match / is expired"})
             } else {
                 console.log('Token auth succeeded')
                 next();

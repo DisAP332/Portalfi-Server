@@ -1,84 +1,103 @@
 const Event = require("./EventsModel")
 const DBMethods = require('../../../db/index')
 
-const retrieveEvents = async() => {
-    try {
-        const eventsFound = await Event.find({});
+const retrieveEvents = () => {
+    return new Promise(async (resolve) => {
+        try {
+            const eventsFound = await Event.find({});
 
-        if (eventsFound) {
-        if (!eventsFound.length) {
-            return res
-                .status(404)
-                .json({ success: false, error: `Events not found`})
-        }
-            console.log('events found!')
-            return eventsFound
+            if (eventsFound) {
+            if (!eventsFound.length) {
+                return res
+                    .status(404)
+                    .json({ success: false, error: `Events not found`})
+            }
+                console.log('events found!')
+                resolve(eventsFound)
 
-        }
-    } catch (err) { console.log(err) }
-}
-
-getEvents = async (req, res) => {
-    new Promise((resolve, reject) => {
-        setTimeout(() => {
-            let eventsData = retrieveEvents();
-            eventsData.then(events => {
-                eventsData = JSON.stringify(events);
-                console.log(eventsData)
-                resolve();
-            }).then(() => {
-                return res.status(200).json({success: true, Data: eventsData})
-            })
-        }, 200);
+            }
+        } catch (err) { console.log(err) }
     })
 }
 
-createEvent = (req, res) => {
-    new Promise((resolve, reject) => {
-        DBMethods.DB(req.body.User)
-        setTimeout(() => {
-            resolve()
-        }, 600)
-    }).then(() => {
-        const Data = req.body.Data
-    
-        if(!Data) {
-            return res.status(400).json({
-                success: false,
-                error: "You must provide a event"
-            })
-        }
-    
-        const event = new Event(Data)
+getEvents = async (req, res) => {
+    await DBMethods.DB(req.headers.user)
+    .then(status => {
+        console.log(status.message)
+        return retrieveEvents()
+        .then((events) => {
+            eventsData = JSON.stringify(events);
+            console.log(eventsData);
+            return res.status(200).json({success: true, Data: eventsData})
+        })
+    })
+}
 
-    
-        if (!event) {
-            return res.status(400).json({ success: false, error: err })
-        }
-    
-        event.
-            save()
+createEvent = async (req, res) => {
+    const Data = req.body.Data
+
+    if(!Data) {
+        return res.status(400).json({
+            success: false,
+            error: "You must provide a event"
+        })
+    }
+
+    await DBMethods.DB(req.body.User)
+    .then(() => {
+        return new Promise(async (resolve) => {
+
+            const event = new Event(Data)
+            if (!event) {
+                return res.status(400).json({ success: false, error: err })
+            }
+
+            event.save()
             .then(() => {
-                console.log(`event created by ${req.body.User}`)
-                return res.status(201).json({
-                    success: true,
-                    id: event._id,
-                    message: 'Event created!',
-                })
+               resolve({success: true, id: event._id, message: `event created by ${req.body.User}`})
             })
             .catch(error => {
-                return res.status(400).json({
-                    error,
-                    message: 'Event not created!',
-                })
+               return res.status(400).json({
+                   error,
+                   message: 'Event not created!',
+               })
             })
+        })
+    })
+    .then((results) => {
+        console.log(results)
+        if(results.success){
+            retrieveEvents()
+            .then((events) => {
+                console.log(events)
+                return(
+                    res
+                    .status(200)
+                    .json({
+                        success: true,
+                        message: results.message,
+                        events: events
+                    })
+                )
+            })
+        } else {
+            console.log(results.message)
+            return(
+                res
+                .status(400)
+                .json({ 
+                    success: false,
+                    message: results.message,
+                    events: false
+                })
+            )
+        }
     })
 }
 
 updateEvent = async (req, res) => {
     const body = req.body
-    console.log('wtf')
-    
+
     if(!body) {
         return res.status(400).json({
             success: false,
@@ -86,51 +105,82 @@ updateEvent = async (req, res) => {
         })
     }
 
-    new Promise((resolve, reject) => {
-        DBMethods.DB(req.body.user)
-        setTimeout(() => {
-            console.log('connected should be atleast')
-            resolve()
-        }, 1000)
-    }).then(async () => {
-        console.log('now we doing thiisi')
-        try {
-            const eventFound = await Event.findOne({_id: body.event._id});
-            eventFound.Date = body.event.Date
-            eventFound.Name = body.event.Name
-            eventFound.Time = body.event.Time
-            eventFound.Description = body.event.Description
-            eventFound.Cost = body.event.Cost
-            eventFound
-                .save()
-                .then(() => {
-                    console.log(`event updated by ${req.body.user}`)
-                    return res.status(200).json({
-                        success: true,
-                        id: eventFound._id,
-                        message: 'Event updated!',
+    DBMethods.DB(req.headers.user)
+    .then(() => {
+        return new Promise(async(resolve) => {
+            try {
+                const eventFound = await Event.findOne({_id: body._id});
+                eventFound.Date = body.Date
+                eventFound.Name = body.Name
+                eventFound.Time = body.Time
+                eventFound.Description = body.Description
+                eventFound.Cost = body.Cost
+                eventFound
+                    .save()
+                    .then(() => {
+                        console.log(`event updated by ${req.headers.user}`)
+                        resolve({
+                            success: true,
+                            id: eventFound._id,
+                            message: `Event: ${eventFound._id} updated!`
+                        })
                     })
+        
+            } catch (err) {
+                return res.status(404).json({
+                    success: false,
+                    err,
+                    message: 'Event not found!'
                 })
-    
-        } catch (err) {
-            return res.status(404).json({
-                err,
-                message: 'Event not found!'
-            })
-        }
+            }
+        })
+    })
+    .then((results) => {
+        retrieveEvents()
+        .then((events) => {
+            return(
+                res
+                .status(200)
+                .json({
+                    success: true,
+                    message: results.message,
+                    events: events
+                })
+            )
+        })
     })
 }
 
 deleteEvent = async (req, res) => {
-    console.log(`ObjectId('${req.params.id}')`)
-    try {
-        const event = await Event.findByIdAndDelete({ _id: req.params.id})
-        if (!event) {
-            return res
-            .status(404)
-            .json({ success: false, error: `Event not found` })
-        }
-    } catch (err) { return res.status(400).json({ success: false, error: err }) }
+    await DBMethods.DB(req.headers.user)
+    .then(() => {
+        console.log(req.params.id)
+        return new Promise(async (resolve) => {
+            try {
+                await Event.findByIdAndDelete({ _id: req.params.id})
+                .then(() => {
+                    resolve({success: true, message: `Event deleted: ${req.params.id}`})
+                })
+            } catch (err) {
+                resolve(res.status(400).json({ success: false, error: err }))
+            }
+        })
+    })
+    .then((results) => {
+        console.log(results.message)
+        retrieveEvents()
+        .then((events) => {
+            return(
+                res
+                .status(200)
+                .json({ 
+                    success: true,
+                    message: results.message,
+                    events: events
+                })
+            )
+        })
+    })
 }
 
 module.exports = {
