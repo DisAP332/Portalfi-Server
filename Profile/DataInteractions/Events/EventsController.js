@@ -43,7 +43,7 @@ createEvent = async (req, res) => {
         })
     }
 
-    await DBMethods.DB(req.headers.User)
+    await DBMethods.DB(req.headers.user)
     .then(() => {
         return new Promise(async (resolve) => {
 
@@ -54,7 +54,7 @@ createEvent = async (req, res) => {
 
             event.save()
             .then(() => {
-               resolve({success: true, id: event._id, message: `event created by ${req.headers.User}`})
+               resolve({success: true, id: event._id, message: `event created by ${req.headers.user}`})
             })
             .catch(error => {
                return res.status(400).json({
