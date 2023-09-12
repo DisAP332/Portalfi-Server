@@ -8,6 +8,7 @@ require("dotenv").config();
 const userRouter = require('./User/userRouter')
 const eventsRouter = require('./Profile/DataInteractions/Events/EventsRouter')
 const profileRouter = require('./Profile/SecureRouter')
+const publicRouter = require('./Public/PublicRouter')
 
 const https = require('https')
 const http = require('http')
@@ -51,6 +52,8 @@ const verifyJWT = (req, res, next) => {
 
 // Routes //
 
+app.use('/public', publicRouter)
+
 app.use('/user', userRouter)
 
 app.use('/events', verifyJWT, eventsRouter)
@@ -69,8 +72,4 @@ app.listen(httpPort, () => {
 })
 app.listen(httpsPort, () => {
     console.log(`HTTPS server running on port ${httpsPort}`)
-})
-
-app.listen('3000', () => {
-    console.log('server running on port 3000')
 })
